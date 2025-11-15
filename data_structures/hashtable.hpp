@@ -93,7 +93,7 @@ public:
         size += 1;
     }
 
-    bool containsKey(K& k)
+    bool containsKey(K k)
     {
         int index = hash(k);
 
@@ -137,7 +137,7 @@ public:
         throw std::runtime_error("The item with the key value does not exist in the table");
     }
 
-    V& remove(K& k)
+    V remove(K k)
     {
         if (length > 32 && ((float)size / (float)length) < 0.25)
         {

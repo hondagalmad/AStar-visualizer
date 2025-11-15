@@ -4,16 +4,16 @@
 #include <raylib.h>
 #include "../data_structures/hashtable.hpp"
 
-#define CELL_WIDTH 5
-#define CELL_HEIGHT 5
+#define CELL_WIDTH 20
+#define CELL_HEIGHT 20
 
 
 enum CellType
 {
-    SOURCE = 0, WALL = 1, CHECKED = 2, TARGET = 3
+    SOURCE = 0, WALL = 1, CHECKED = 2, TARGET = 3, PATH = 4, REMOVE
 };
 
-const Color COLORS[] = {YELLOW, BROWN, SKYBLUE, DARKBLUE};
+const Color COLORS[] = {DARKGREEN, BROWN, SKYBLUE, DARKBLUE, MAROON};
 
 struct Cell
 {
@@ -43,9 +43,16 @@ private:
     CellType selectedType;
     Grid grid;
 
+
+    // only onse source and one target
+    Cell source;
+    Cell target;
+
+    int sourceKey;
+    int targetKey;
+
     // helper methods
     // ---------------------------------------------------------------------------------------------------------
-
 
     virtual bool isValid(int x, int y)
     {
@@ -77,17 +84,46 @@ private:
         return rect;
     }
 
-    virtual void putToGrid(Vector2I cellPos)
+    virtual void putToGrid(Vector2I cellPos, CellType ct)
     {
-        Cell c;
-        c.rect = generateRect(cellPos);
-        c.type = selectedType;
-        c.color = COLORS[selectedType];
+        int key = generateKey(cellPos);
 
-        grid.table.insert(generateKey(cellPos), c);
+        if (running)
+        {
+
+        }
+        else if (ct == REMOVE)
+        {
+            // user cann't remove the source or the target
+            if (grid.table.containsKey(key))
+            {
+                grid.table.remove(key);
+            }
+            return;
+        }
+        else if (grid.table.containsKey(key)) return;
+        else if (ct == SOURCE)
+        {
+            sourceKey = key;
+            source.rect = generateRect(cellPos);
+            return;
+        }
+        else if (ct == TARGET)
+        {
+            targetKey = key;
+            target.rect = generateRect(cellPos);
+            return;
+        }
+
+        if (sourceKey == key || targetKey == key) return;
+
+        Cell cell;
+        cell.rect = generateRect(cellPos);
+        cell.type = ct;
+        cell.color = COLORS[ct];
+        grid.table.insert(key, cell);
+
     }
-
-
 
     // ---------------------------------------------------------------------------------------------------------
     
@@ -106,6 +142,17 @@ public:
 
         selectedType = WALL;
 
+        // make the source and the target in the middle
+        // of the screen at opposite sides
+        
+        source.type = SOURCE;
+        source.color = COLORS[SOURCE];
+
+        target.type = TARGET;
+        target.color = COLORS[TARGET];
+
+        putToGrid((Vector2I){.x = 0, .y = grid.cellsNumber.y / 2}, SOURCE);
+        putToGrid((Vector2I){.x = grid.cellsNumber.x - 1, .y = grid.cellsNumber.y / 2}, TARGET);
     }
     virtual void select(CellType ct) {selectedType = ct;}
     virtual void run() {running = true;}
@@ -114,11 +161,23 @@ public:
     virtual void press(Vector2 mouse)
     {
         if (running) {return;}
-        putToGrid(convertMouse(mouse));
+        Vector2I pos = convertMouse(mouse);
+        if (isValid(pos.x, pos.y))
+        {
+            putToGrid(pos, selectedType);
+        }
     }
+
+    Cell getSource() {return source;}
+    Cell getTarget() {return target;}
 
     void update(Hashtable<int, Cell>::HashIterator& iter)
     {
+        if (running)
+        {
+
+        }
+
         iter.begin(grid.table);
     }
 
