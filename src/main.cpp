@@ -14,6 +14,8 @@ int main()
 
     Hashtable<int, Cell>::HashIterator iter;
 
+    // SetTargetFPS(120);
+
     while (!WindowShouldClose())
     {
         BeginDrawing();
@@ -60,14 +62,20 @@ int main()
         for (iter; iter.hasNext(); iter.next())
         {
             cc = iter.getData();
-            DrawRectangle(cc.rect.x, cc.rect.y, cc.rect.width, cc.rect.height, cc.color);
+            DrawRectangle(cc.rect.x, cc.rect.y, cc.rect.width, cc.rect.height, COLORS[cc.type]);
         }
 
         // draw source and target
         cc = searcher.getSource();
-        DrawRectangle(cc.rect.x, cc.rect.y, cc.rect.width, cc.rect.height, cc.color);
+        DrawRectangle(cc.rect.x, cc.rect.y, cc.rect.width, cc.rect.height, COLORS[cc.type]);
         cc = searcher.getTarget();
-        DrawRectangle(cc.rect.x, cc.rect.y, cc.rect.width, cc.rect.height, cc.color);
+        DrawRectangle(cc.rect.x, cc.rect.y, cc.rect.width, cc.rect.height, COLORS[cc.type]);
+
+        if (searcher.isRunning())
+        {
+            cc = searcher.getCurrentCell();
+            DrawRectangle(cc.rect.x, cc.rect.y, cc.rect.width, cc.rect.height, RED);
+        }
 
 
         EndDrawing();

@@ -70,7 +70,7 @@ public:
         delete [] arrays;
     }
 
-    void insert(K k, V& v)
+    void insert(K k, V v)
     {
         if ((float)size / (float)length >= 1)
         {
@@ -108,7 +108,7 @@ public:
     }
 
 
-    V& get(K k)
+    V get(K k)
     {
         int index = hash(k);
 
