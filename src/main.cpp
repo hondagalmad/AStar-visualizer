@@ -10,17 +10,17 @@ int main()
 
     InitWindow(800, 800, "Visualizer");
 
-    Searcher searcher(Vector2{.x = 0, .y = 200}, Vector2{.x = 800, .y = 600});
+    Searcher searcher(Vector2{.x = 0, .y = 0}, Vector2{.x = 800, .y = 800});
 
-    Hashtable<int, Cell>::HashIterator iter;
+    Hashtable<int, CellType>::HashIterator iter;
 
-    // SetTargetFPS(120);
+    // SetTargetFPS(60);
 
     while (!WindowShouldClose())
     {
         BeginDrawing();
 
-        DrawRectangle(0, 200, 800, 600, WHITE);
+        DrawRectangle(0, 0, 800, 800, WHITE);
 
         // select the type
         if (IsKeyPressed(KEY_S))
@@ -57,26 +57,17 @@ int main()
         // update the searcher and start the iterator
         searcher.update(iter);
 
-        Cell cc;
+        Rectangle rect;
         // draw the cells with the help of the iterator
         for (iter; iter.hasNext(); iter.next())
         {
-            cc = iter.getData();
-            DrawRectangle(cc.rect.x, cc.rect.y, cc.rect.width, cc.rect.height, COLORS[cc.type]);
+            rect = searcher.generateRect(iter.getKey());
+            DrawRectangle(rect.x, rect.y, rect.width, rect.height, COLORS[iter.getValue()]);
         }
 
-        // draw source and target
-        cc = searcher.getSource();
-        DrawRectangle(cc.rect.x, cc.rect.y, cc.rect.width, cc.rect.height, COLORS[cc.type]);
-        cc = searcher.getTarget();
-        DrawRectangle(cc.rect.x, cc.rect.y, cc.rect.width, cc.rect.height, COLORS[cc.type]);
-
-        if (searcher.isRunning())
-        {
-            cc = searcher.getCurrentCell();
-            DrawRectangle(cc.rect.x, cc.rect.y, cc.rect.width, cc.rect.height, RED);
-        }
-
+        // draw the current cell with red
+        rect = searcher.generateRect(searcher.getCurrentKey());
+        DrawRectangle(rect.x, rect.y, rect.width, rect.height, RED);
 
         EndDrawing();
     }

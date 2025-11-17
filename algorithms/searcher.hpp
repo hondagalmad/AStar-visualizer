@@ -5,8 +5,8 @@
 #include "../data_structures/hashtable.hpp"
 #include "../data_structures/heap.hpp"
 
-#define CELL_WIDTH 20
-#define CELL_HEIGHT 20
+#define CELL_WIDTH 10
+#define CELL_HEIGHT 10
 #define MIN_X_EDGE -1
 #define MIN_Y_EDGE -1
 #define MAX_X_EDGE 1
@@ -26,14 +26,6 @@ struct Vector2I
     int y;
 };
 
-struct Cell
-{
-    Vector2I pos;
-    Rectangle rect;
-    CellType type;
-};
-
-
 class Searcher
 {
 private:
@@ -42,17 +34,12 @@ private:
     {
         Vector2I startingPoint;
         Vector2I cellsNumber;
-        Hashtable<int, Cell> table;
+        Hashtable<int, CellType> table;
     };
 
     bool running;
     CellType selectedType;
     Grid grid;
-
-
-    // only onse source and one target
-    Cell source;
-    Cell target;
 
     int sourceKey;
     int targetKey;
@@ -98,20 +85,6 @@ private:
         return x + y * grid.cellsNumber.x;
     }
 
-    // generates the rectangle to be drawn to the screen
-    virtual Rectangle generateRect(int key)
-    {
-        int x = key % grid.cellsNumber.x;
-        int y = key / grid.cellsNumber.x;
-        Rectangle rect;
-        rect.width = CELL_WIDTH;
-        rect.height = CELL_HEIGHT;
-
-        rect.x = x * CELL_WIDTH + grid.startingPoint.x;
-        rect.y = y * CELL_HEIGHT + grid.startingPoint.y;
-
-        return rect;
-    }
 
     // generates the position relative to the grid from a key
     virtual Vector2I generatePos(int key)
@@ -119,6 +92,46 @@ private:
         int x = key % grid.cellsNumber.x;
         int y = key / grid.cellsNumber.x;
         return (Vector2I){.x = x, .y = y};
+    }
+
+
+    virtual void checkIteration()
+    {
+        if (currentEdge.x > MAX_X_EDGE)
+        {
+            currentEdge.x = MIN_X_EDGE;
+            currentEdge.y += 1;
+        }
+        if (currentEdge.y > MAX_Y_EDGE)
+        {
+            if (heap.isEmpty())
+            {
+                std::cout<< "No Path is Found" << std::endl;
+                std::abort();
+            }
+            currentEdge.x = MIN_X_EDGE;
+            currentEdge.y = MIN_Y_EDGE;
+            currentKey = heap.removeSmallest();
+            currentPos = generatePos(currentKey);
+        }
+    }
+    virtual void iterate()
+    {
+        currentEdge.x += 1;
+    }
+
+    virtual bool isCurrentEdgeValid()
+    {
+        // checking if the edge is valid in the grid (adding diagonally is not valid)
+        return isValid(currentPos.x + currentEdge.x, currentPos.y + currentEdge.y) && abs(currentEdge.x) != abs(currentEdge.y);
+    }
+
+
+    virtual void addEdgeFrom(int edge, int fromEdge)
+    {
+        distTo.insert(edge, distTo.get(fromEdge) + 1);
+        from.insert(edge, fromEdge);
+        heap.add(edge, distTo.get(edge));
     }
 
     virtual bool putToGrid(int key, CellType ct)
@@ -130,13 +143,13 @@ private:
             // a wall or something of the same type
             if (grid.table.containsKey(key))
             {
-                if (grid.table.get(key).type >= ct) return false;
+                if (grid.table.get(key) >= ct) return false;
             } 
         }
         else if (ct == REMOVE)
         {
             // user cann't remove the source or the target
-            if (grid.table.containsKey(key) && grid.table.get(key).type != CHECKED)
+            if (grid.table.containsKey(key) && grid.table.get(key) != CHECKED)
             {
                 grid.table.remove(key);
             }
@@ -147,26 +160,23 @@ private:
 
         else if (ct == SOURCE)
         {
+            if (grid.table.containsKey(sourceKey)) grid.table.remove(sourceKey);
+
             sourceKey = key;
-            source.rect = generateRect(key);
-            source.pos = generatePos(key);
+            grid.table.insert(sourceKey, SOURCE);
             return false;
         }
         else if (ct == TARGET)
         {
+            if (grid.table.containsKey(targetKey)) grid.table.remove(targetKey);
             targetKey = key;
-            target.rect = generateRect(key);
-            target.pos = generatePos(key);
+            grid.table.insert(targetKey, TARGET);
             return false;
         }
 
         if (sourceKey == key || targetKey == key) return false;
 
-        Cell cell;
-        cell.rect = generateRect(key);
-        cell.type = ct;
-        cell.pos = generatePos(key);
-        grid.table.insert(key, cell);
+        grid.table.insert(key, ct);
         return true;
     }
 
@@ -192,13 +202,12 @@ public:
 
         // make the source and the target in the middle
         // of the screen at opposite sides
-        
-        source.type = SOURCE;
 
-        target.type = TARGET;
+        sourceKey = -1;
+        targetKey = -1;
 
-        putToGrid(grid.cellsNumber.y / 2 * grid.cellsNumber.x, SOURCE);
-        putToGrid(grid.cellsNumber.x - 1 + grid.cellsNumber.y / 2 * grid.cellsNumber.x, TARGET);
+        putToGrid(grid.cellsNumber.y / 2 * grid.cellsNumber.x, TARGET);
+        putToGrid(grid.cellsNumber.x - 1 + grid.cellsNumber.y / 2 * grid.cellsNumber.x, SOURCE);
     }
 
 
@@ -215,8 +224,8 @@ public:
         currentEdge.x = MIN_X_EDGE;
         currentEdge.y = MIN_Y_EDGE;
 
-        currentPos = source.pos;
         currentKey = sourceKey;
+        currentPos = generatePos(currentKey);
     }
     virtual void pause() {running = false;}
 
@@ -233,51 +242,42 @@ public:
     }
 
 
-    virtual Cell getCurrentCell()
+    virtual int getCurrentKey()
     {
-        if (currentKey == sourceKey) return source;
-        return grid.table.get(currentKey);
+        return currentKey;
     }
 
     virtual bool isRunning() {return running;}
 
 
-    virtual Cell getSource() {return source;}
-    virtual Cell getTarget() {return target;}
+    // generates the rectangle to be drawn to the screen
+    virtual Rectangle generateRect(int key)
+    {
+        int x = key % grid.cellsNumber.x;
+        int y = key / grid.cellsNumber.x;
+        Rectangle rect;
+        rect.width = CELL_WIDTH;
+        rect.height = CELL_HEIGHT;
+
+        rect.x = x * CELL_WIDTH + grid.startingPoint.x;
+        rect.y = y * CELL_HEIGHT + grid.startingPoint.y;
+
+        return rect;
+    }
 
 
 
-
-    virtual void update(Hashtable<int, Cell>::HashIterator& iter)
+    virtual void update(Hashtable<int, CellType>::HashIterator& iter)
     {
         if (running)
         {
             if (!pathFound)
             {
-
-                if (currentEdge.y > MAX_Y_EDGE)
-                {
-                    if (heap.isEmpty())
-                    {
-                        std::cout<< "No Path is Found" << std::endl;
-                        std::abort();
-                    }
-                    currentEdge.x = MIN_X_EDGE;
-                    currentEdge.y = MIN_Y_EDGE;
-                    currentKey = heap.removeSmallest();
-                    currentPos = grid.table.get(currentKey).pos;
-
-                }
-                else if (currentEdge.x > MAX_X_EDGE)
-                {
-                    currentEdge.x = MIN_X_EDGE;
-                    currentEdge.y += 1;
-                }
+                
+                checkIteration();
     
-                // checking if the edge is valid in the grid (adding diagonally is not allowed)
-                if (isValid(currentPos.x + currentEdge.x, currentPos.y + currentEdge.y) && abs(currentEdge.x) != abs(currentEdge.y))
+                if (isCurrentEdgeValid())
                 {
-
                     int newKey = generateKey(currentPos.x + currentEdge.x, currentPos.y + currentEdge.y);
 
                     if (newKey == targetKey) pathFound = true;
@@ -285,12 +285,10 @@ public:
                     // only add the new cell if it's added to the grid successfully
                     if (putToGrid(newKey, CHECKED))
                     {
-                        distTo.insert(newKey, distTo.get(currentKey) + 1);
-                        from.insert(newKey, currentKey);
-                        heap.add(newKey, distTo.get(newKey));
+                        addEdgeFrom(newKey, currentKey);
                     }
                 }
-                currentEdge.x += 1;
+                iterate();
             }
         }
 

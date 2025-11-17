@@ -215,9 +215,14 @@ public:
             return counter <= ht->size;
         }
 
-        V& getData()
+        V& getValue()
         {
             return ht->arrays[index1].get(index2).getValue();
+        }
+
+        K& getKey()
+        {
+            return ht->arrays[index1].get(index2).getKey();
         }
 
     };
