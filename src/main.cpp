@@ -2,8 +2,9 @@
 
 #include <raylib.h>
 #include <raygui.h>
-
 #include "../algorithms/searcher.hpp"
+
+#define FRAMES 60.0f
 
 int main()
 {
@@ -14,11 +15,11 @@ int main()
 
     Hashtable<int, CellType>::HashIterator iter;
 
+    SetTargetFPS(120);
 
     while (!WindowShouldClose())
     {
         BeginDrawing();
-        
 
         ClearBackground(WHITE);
 
@@ -61,16 +62,18 @@ int main()
         // draw the cells with the help of the iterator
         for (iter; iter.hasNext(); iter.next())
         {
-            rect = searcher.generateRect(iter.getKey());
+            searcher.generateRect(iter.getKey(), &rect);
             DrawRectangle(rect.x, rect.y, rect.width, rect.height, COLORS[iter.getValue()]);
         }
 
         // draw the current cell with red
         if (!searcher.isPathFound())
         {
-            rect = searcher.generateRect(searcher.getCurrentKey());
+            searcher.generateRect(searcher.getCurrentKey(), &rect);
             DrawRectangle(rect.x, rect.y, rect.width, rect.height, RED);
         }
+
+
 
         EndDrawing();
     }

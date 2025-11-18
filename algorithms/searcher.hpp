@@ -5,12 +5,8 @@
 #include "../data_structures/hashtable.hpp"
 #include "../data_structures/heap.hpp"
 
-#define CELL_WIDTH 10
-#define CELL_HEIGHT 10
-#define MIN_X_EDGE -1
-#define MIN_Y_EDGE -1
-#define MAX_X_EDGE 1
-#define MAX_Y_EDGE 1
+#define CELL_WIDTH 20
+#define CELL_HEIGHT 20
 
 enum CellType
 {
@@ -20,15 +16,17 @@ enum CellType
 const Color COLORS[] = {DARKGREEN, SKYBLUE, BROWN, DARKBLUE, YELLOW};
 
 
-struct Vector2I
-{
-    int x;
-    int y;
-};
-
 class Searcher
 {
 private:
+
+
+    struct Vector2I
+    {
+        int x;
+        int y;
+    };
+
 
     struct Grid
     {
@@ -60,7 +58,6 @@ private:
 
     Vector2I currentPos;
     int currentKey;
-    Vector2I currentEdge;
 
     // helper methods
     // ---------------------------------------------------------------------------------------------------------
@@ -93,39 +90,6 @@ private:
         int y = key / grid.cellsNumber.x;
         return (Vector2I){.x = x, .y = y};
     }
-
-
-    virtual void checkIteration()
-    {
-        if (currentEdge.x > MAX_X_EDGE)
-        {
-            currentEdge.x = MIN_X_EDGE;
-            currentEdge.y += 1;
-        }
-        if (currentEdge.y > MAX_Y_EDGE)
-        {
-            if (heap.isEmpty())
-            {
-                std::cout<< "No Path is Found" << std::endl;
-                std::abort();
-            }
-            currentEdge.x = MIN_X_EDGE;
-            currentEdge.y = MIN_Y_EDGE;
-            currentKey = heap.removeSmallest();
-            currentPos = generatePos(currentKey);
-        }
-    }
-    virtual void iterate()
-    {
-        currentEdge.x += 1;
-    }
-
-    virtual bool isCurrentEdgeValid()
-    {
-        // checking if the edge is valid in the grid (adding diagonally is not valid)
-        return isValid(currentPos.x + currentEdge.x, currentPos.y + currentEdge.y) && abs(currentEdge.x) != abs(currentEdge.y);
-    }
-
 
     virtual void addEdgeFrom(int edge, int fromEdge)
     {
@@ -221,11 +185,8 @@ public:
         from.insert(sourceKey, -1);
         distTo.insert(sourceKey, 0);
 
-        currentEdge.x = MIN_X_EDGE;
-        currentEdge.y = MIN_Y_EDGE;
+        heap.add(sourceKey, 0);
 
-        currentKey = sourceKey;
-        currentPos = generatePos(currentKey);
     }
     virtual void pause() {running = false;}
 
@@ -252,18 +213,16 @@ public:
     virtual bool isPathFound() {return pathFound;}
 
     // generates the rectangle to be drawn to the screen
-    virtual Rectangle generateRect(int key)
+    virtual void generateRect(int key, Rectangle* rect)
     {
         int x = key % grid.cellsNumber.x;
         int y = key / grid.cellsNumber.x;
-        Rectangle rect;
-        rect.width = CELL_WIDTH;
-        rect.height = CELL_HEIGHT;
+        rect->width = CELL_WIDTH;
+        rect->height = CELL_HEIGHT;
 
-        rect.x = x * CELL_WIDTH + grid.startingPoint.x;
-        rect.y = y * CELL_HEIGHT + grid.startingPoint.y;
+        rect->x = x * CELL_WIDTH + grid.startingPoint.x;
+        rect->y = y * CELL_HEIGHT + grid.startingPoint.y;
 
-        return rect;
     }
 
 
@@ -275,25 +234,36 @@ public:
             if (!pathFound)
             {
                 
-                checkIteration();
-    
-                if (isCurrentEdgeValid())
+                if (!heap.isEmpty())
                 {
-                    int newKey = generateKey(currentPos.x + currentEdge.x, currentPos.y + currentEdge.y);
+                    currentKey = heap.removeSmallest();
+                    currentPos = generatePos(currentKey);
+                }
 
-                    if (newKey == targetKey)
+                for (int y = -1; y <= 1; y += 1)
+                {
+                    for (int x = -1; x <= 1; x += 1)
                     {
-                        pathFound = true;
-                        from.insert(targetKey, currentKey);
-                    }
-    
-                    // only add the new cell if it's added to the grid successfully
-                    if (putToGrid(newKey, CHECKED))
-                    {
-                        addEdgeFrom(newKey, currentKey);
+            
+                        if (isValid(currentPos.x + x, currentPos.y + y) && abs(x) != abs(y))
+                        {
+                            int newKey = generateKey(currentPos.x + x, currentPos.y + y);
+        
+                            if (newKey == targetKey)
+                            {
+                                pathFound = true;
+                                from.insert(targetKey, currentKey);
+                            }
+            
+                            // only add the new cell if it's added to the grid successfully
+                            if (putToGrid(newKey, CHECKED))
+                            {
+                                addEdgeFrom(newKey, currentKey);
+                            }
+                        }
+
                     }
                 }
-                iterate();
             }
             else
             {
