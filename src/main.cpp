@@ -54,21 +54,13 @@ int main()
         {
             searcher.press(GetMousePosition());
         }
-        else if (IsMouseButtonDown(MOUSE_MIDDLE_BUTTON))
-        {
-            searcher.startDragging();
-        }
-        else if (IsMouseButtonReleased(MOUSE_MIDDLE_BUTTON))
-        {
-            searcher.stopDragging();
-        }
-
-
-        if (searcher.isDragging())
+        else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON))
         {
             Vector2 diff = GetMouseDelta();
             searcher.drag(diff.x, diff.y);
         }
+        
+        searcher.zoom((int)GetMouseWheelMove());
 
         // update the searcher and start the iterator
         searcher.update(iter);

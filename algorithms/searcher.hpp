@@ -4,10 +4,7 @@
 #include <raylib.h>
 #include "../data_structures/hashtable.hpp"
 #include "../data_structures/heap.hpp"
-
-#define CELL_WIDTH 50
-#define CELL_HEIGHT 50
-
+#include <iostream>
 enum CellType
 {
     CHECKED = 0, WALL = 1, PATH = 2, SOURCE = 3, TARGET = 4, REMOVE, 
@@ -62,8 +59,10 @@ private:
 
     struct Grid
     {
+        float cellDimension;
         Vector2I startingPoint;
         Vector2I cellsNumber;
+        Vector2 dimensions = dimensions;;
         Hashtable<Vector2I, CellType> table;
     };
 
@@ -95,6 +94,8 @@ private:
     
     bool dragging;
 
+
+
     // helper methods
     // ---------------------------------------------------------------------------------------------------------
 
@@ -102,8 +103,8 @@ private:
     virtual Vector2I getGridCoordinates(Vector2 mouse)
     {
         Vector2I v;
-        v.x = ((int)(mouse.x) - (grid.startingPoint.x + xDiff)) / CELL_WIDTH;
-        v.y = ((int)(mouse.y) - (grid.startingPoint.y + yDiff)) / CELL_HEIGHT;
+        v.x = ((int)(mouse.x) - (grid.startingPoint.x + xDiff)) / grid.cellDimension;
+        v.y = ((int)(mouse.y) - (grid.startingPoint.y + yDiff)) / grid.cellDimension;
         return v;
     }
 
@@ -157,8 +158,6 @@ private:
         grid.table.insert(key, ct);
         return true;
     }
-
-
     // ---------------------------------------------------------------------------------------------------------
     
 
@@ -168,10 +167,14 @@ public:
         grid.startingPoint.x = startingPos.x;
         grid.startingPoint.y = startingPos.y;
 
+        grid.cellDimension = 20;
 
-        grid.cellsNumber.x = (int)dimensions.x / (int)CELL_WIDTH;
-        grid.cellsNumber.y = (int)dimensions.y / (int)CELL_HEIGHT;
+        grid.dimensions = dimensions;
+
+        grid.cellsNumber.x = (int)dimensions.x / (int)grid.cellDimension;
+        grid.cellsNumber.y = (int)dimensions.y / (int)grid.cellDimension;
         
+
         running = false;
 
         selectedType = WALL;
@@ -223,10 +226,19 @@ public:
 
     virtual bool isDragging() {return dragging;}
 
-    virtual void drag(int x, int y)
+    virtual void drag(float x, float y)
     {
         xDiff += x;
         yDiff += y;
+    }
+
+    virtual void zoom(int n)
+    {
+        grid.cellDimension = std::max(n + grid.cellDimension, 10.0f);
+
+        grid.cellsNumber.x = grid.dimensions.x / grid.cellDimension;
+        grid.cellsNumber.y = grid.dimensions.y / grid.cellDimension;
+
     }
 
     virtual Vector2I getCurrentPos()
@@ -241,18 +253,18 @@ public:
     // generates the rectangle to be drawn to the screen
     virtual void generateRect(Vector2I pos, Rectangle* rect)
     {
-        rect->width = CELL_WIDTH;
-        rect->height = CELL_HEIGHT;
+        rect->width = grid.cellDimension;
+        rect->height = grid.cellDimension;
 
-        rect->x = pos.x * CELL_WIDTH + grid.startingPoint.x + xDiff;
-        rect->y = pos.y * CELL_HEIGHT + grid.startingPoint.y + yDiff;
+        rect->x = pos.x * grid.cellDimension + grid.startingPoint.x + xDiff;
+        rect->y = pos.y * grid.cellDimension + grid.startingPoint.y + yDiff;
 
     }
 
     virtual bool isInRange(Rectangle rect)
     {
-        return rect.x >= -CELL_WIDTH && rect.x <= (grid.cellsNumber.x + 1) * CELL_WIDTH
-            && rect.y >= -CELL_HEIGHT && rect.y <= (grid.cellsNumber.y + 1) * CELL_HEIGHT;
+        return rect.x >= -grid.cellDimension && rect.x <= (grid.cellsNumber.x + 1) * grid.cellDimension
+            && rect.y >= -grid.cellDimension && rect.y <= (grid.cellsNumber.y + 1) * grid.cellDimension;
     }
 
 
@@ -273,6 +285,7 @@ public:
                     for (int x = -1; x <= 1; x += 1)
                     {
             
+                        // diagonal is not allowed
                         if (abs(x) != abs(y))
                         {
                             Vector2I newPos = (Vector2I){currentPos.x + x, currentPos.y + y};
