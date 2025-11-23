@@ -267,6 +267,26 @@ public:
             && rect.y >= -grid.cellDimension && rect.y <= (grid.cellsNumber.y + 1) * grid.cellDimension;
     }
 
+    virtual int getCellDimemsion()
+    {
+        return grid.cellDimension;
+    }
+
+    virtual Vector2 getDimensions()
+    {
+        return grid.dimensions;
+    }
+
+    virtual Vector2I getCellsNumber()
+    {
+        return grid.cellsNumber;
+    }
+
+    virtual Vector2I getDiff()
+    {
+        return (Vector2I){xDiff, yDiff};
+    }
+
 
     virtual void update(Hashtable<Vector2I, CellType>::HashIterator& iter)
     {

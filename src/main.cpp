@@ -86,7 +86,23 @@ int main()
             }
         }
 
+        // drawing grid lines
+        Vector2I diff = searcher.getDiff();
+        Vector2I cellsNumber = searcher.getCellsNumber();
+        Vector2 dimensions = searcher.getDimensions();
+        int cellDimension = searcher.getCellDimemsion();
 
+
+        for (float x = diff.x % cellDimension; x <= dimensions.x + diff.x % cellDimension; x += cellDimension)
+        {
+            DrawLine(x, 0, x, dimensions.y, BLACK);
+        }
+        
+        
+        for (float y = diff.y % cellDimension; y <= dimensions.y + diff.y % cellDimension; y += cellDimension)
+        {
+            DrawLine(0, y, dimensions.x, y, BLACK);
+        }
 
         EndDrawing();
     }
