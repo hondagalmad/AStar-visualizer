@@ -250,23 +250,56 @@ public:
 
     virtual bool isPathFound() {return pathFound;}
 
+    // returns true if a position is to be drawn to the screen
+    virtual bool isValid(Vector2I pos)
+    {
+
+        float xCellDiff = (float)xDiff / (float)grid.cellDimension;
+        float yCellDiff = (float)yDiff / (float)grid.cellDimension;
+
+        return xCellDiff + pos.x > -1 && yCellDiff + pos.y > -1 &&
+                xCellDiff + pos.x < grid.cellsNumber.x && yCellDiff + pos.y < grid.cellsNumber.y;
+    }
+
     // generates the rectangle to be drawn to the screen
     virtual void generateRect(Vector2I pos, Rectangle* rect)
     {
-        rect->width = grid.cellDimension;
-        rect->height = grid.cellDimension;
-
         rect->x = pos.x * grid.cellDimension + grid.startingPoint.x + xDiff;
         rect->y = pos.y * grid.cellDimension + grid.startingPoint.y + yDiff;
 
-    }
 
-    virtual bool isInRange(Rectangle rect)
-    {
-        return rect.x - grid.startingPoint.x >= -grid.cellDimension && rect.x <= grid.cellsNumber.x * grid.cellDimension + grid.startingPoint.x
-            && rect.y - grid.startingPoint.y >= -grid.cellDimension && rect.y <= (grid.cellsNumber.y + 1) * grid.cellDimension + grid.startingPoint.y;
-    }
+        // conditions are added to prevent drawing outside the grid
 
+        if (rect->x < grid.startingPoint.x)
+        {
+            rect->width = grid.cellDimension - (grid.startingPoint.x - rect->x);
+            rect->x = grid.startingPoint.x;
+        }
+        else if (rect->x + grid.cellDimension > grid.startingPoint.x + grid.dimensions.x)
+        {
+            rect->width = grid.startingPoint.x + grid.dimensions.x - rect->x;
+        }
+        else
+        {
+            rect->width = grid.cellDimension;
+        }
+
+
+        if (rect->y < grid.startingPoint.y)
+        {
+            rect->height = grid.cellDimension - (grid.startingPoint.y - rect->y);
+            rect->y = grid.startingPoint.y;
+        }
+        else if (rect->y + grid.cellDimension > grid.startingPoint.y + grid.dimensions.y)
+        {
+            rect->height = (grid.startingPoint.y + grid.dimensions.y - rect->y);
+        }
+        else
+        {
+            rect->height = grid.cellDimension;
+        }
+
+    }
 
     virtual bool isColumn(int colNumber)
     {

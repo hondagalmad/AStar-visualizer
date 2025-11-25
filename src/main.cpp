@@ -25,7 +25,7 @@ int main()
         ClearBackground(WHITE);
 
 
-        DrawRectangle(200, 200, 400, 400, BLUE);
+        DrawRectangle(200, 200, 400, 400, GRAY);
 
         // select the type
         if (IsKeyPressed(KEY_S))
@@ -73,9 +73,9 @@ int main()
         // draw the cells with the help of the iterator
         for (iter; iter.hasNext(); iter.next())
         {
-            searcher.generateRect(iter.getKey(), &rect);
-            if (searcher.isInRange(rect))
+            if (searcher.isValid(iter.getKey()))
             {
+                searcher.generateRect(iter.getKey(), &rect);
                 DrawRectangle(rect.x, rect.y, rect.width, rect.height, COLORS[iter.getValue()]);
             }
         }
@@ -83,9 +83,9 @@ int main()
         // draw the current cell with red
         if (!searcher.isPathFound())
         {
-            searcher.generateRect(searcher.getCurrentPos(), &rect);
-            if (searcher.isInRange(rect))
+            if (searcher.isValid(searcher.getCurrentPos()))
             {
+                searcher.generateRect(searcher.getCurrentPos(), &rect);
                 DrawRectangle(rect.x, rect.y, rect.width, rect.height, RED);
             }
         }
@@ -96,13 +96,13 @@ int main()
         for (int col = 1; searcher.isColumn(col); col += 1)
         {
             searcher.getColumn(col, &sPoint, &ePoint);
-            DrawLine(sPoint.x, sPoint.y, ePoint.x, ePoint.y, ColorAlpha(BLACK, 1));
+            DrawLine(sPoint.x, sPoint.y, ePoint.x, ePoint.y, ColorAlpha(BLACK, 0.2));
         }
 
         for (int row = 1; searcher.isRow(row); row += 1)
         {
             searcher.getRow(row, &sPoint, &ePoint);
-            DrawLine(sPoint.x, sPoint.y, ePoint.x, ePoint.y, ColorAlpha(BLACK, 1));
+            DrawLine(sPoint.x, sPoint.y, ePoint.x, ePoint.y, ColorAlpha(BLACK, 0.2));
         }
 
 
