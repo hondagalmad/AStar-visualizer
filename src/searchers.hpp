@@ -1,10 +1,12 @@
 #ifndef SEARCHER_H
 #define SEARCHER_H
 
+#include <math.h>
+
 #include "../include/raylib.h"
 #include "../data_structures/hashtable.hpp"
 #include "../data_structures/heap.hpp"
-#include <iostream>
+
 enum CellType
 {
     CHECKED = 0, WALL = 1, PATH = 2, SOURCE = 3, TARGET = 4, REMOVE, 
@@ -70,10 +72,9 @@ private:
     CellType selectedType;
     Grid grid;
 
+protected:
     Vector2I sourcePos;
     Vector2I targetPos;
-
-
     // searching 
     Heap<Vector2I> heap;
     
@@ -162,7 +163,7 @@ private:
     
 
 public:
-    Searcher(Vector2 startingPos, Vector2 dimensions)
+    explicit Searcher(Vector2 startingPos, Vector2 dimensions)
     {
         grid.startingPoint.x = startingPos.x;
         grid.startingPoint.y = startingPos.y;
@@ -171,8 +172,8 @@ public:
 
         grid.dimensions = dimensions;
 
-        grid.cellsNumber.x = (int)dimensions.x / (int)grid.cellDimension;
-        grid.cellsNumber.y = (int)dimensions.y / (int)grid.cellDimension;
+        grid.cellsNumber.x = dimensions.x / grid.cellDimension;
+        grid.cellsNumber.y = dimensions.y / grid.cellDimension;
         
 
         running = false;
@@ -398,5 +399,48 @@ public:
         iter.begin(grid.table);
     }
 };
+
+
+
+
+
+class Dijkstra : public Searcher
+{
+public:
+    Dijkstra(Vector2 startingPos, Vector2 dimensions):Searcher(startingPos, dimensions)
+    {
+    }
+};
+
+
+
+
+
+
+class AStar : public Searcher
+{
+
+private:
+    void addEdgeFrom(Vector2I vertex, Vector2I fromVertex) override
+    {
+        distTo.insert(vertex, distTo.get(fromVertex) + 1);
+        from.insert(vertex, fromVertex);
+
+        float dx = vertex.x - targetPos.x;
+        float dy = vertex.y - targetPos.y;
+        float d = sqrt(pow(dx, 2) + pow(dy, 2));
+
+        heap.add(vertex, distTo.get(vertex) + d);
+    }
+public:
+    AStar(Vector2 startingPos, Vector2 dimensions):Searcher(startingPos, dimensions)
+    {
+    }
+};
+
+
+
+
+
 
 #endif
