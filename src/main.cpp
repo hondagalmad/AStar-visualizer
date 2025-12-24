@@ -9,9 +9,12 @@
 #define BUTTON_HEIGHT 60
 
 
+int screenWidth = 0;
+int screenHeight = 0;
+
 
 int searcherType = DIJKSTRA;
-Searcher* searcher = new Dijkstra(Vector2{.x = 200, .y = 200}, Vector2{.x = 400, .y = 400});
+Searcher* searcher;
 Hashtable<Vector2I, CellType>::HashIterator iter;
 
 
@@ -82,7 +85,13 @@ void updateButtons(Vector2 mouse, bool isPressed)
 int main()
 {
 
-    InitWindow(800, 800, "Visualizer");
+    InitWindow(screenWidth, screenHeight, "Visualizer");
+    ToggleFullscreen();
+    screenWidth = GetScreenWidth();
+    screenHeight = GetScreenHeight();
+
+    searcher = new Dijkstra(Vector2{.x = 0, .y = screenHeight / 5.0f},
+         Vector2{.x = (float)screenWidth, .y = 4.0f * screenHeight / 5.0f});
     SetTargetFPS(120);
 
     // initializing buttons
@@ -93,7 +102,7 @@ int main()
         ClearBackground(WHITE);
 
 
-        DrawRectangle(200, 200, 400, 400, GRAY);
+        DrawRectangle(0, screenHeight / 5.0f, screenWidth, 4.0f * screenHeight / 5.0f, LIGHTGRAY);
 
 
         // add particles if mouse is pressed
@@ -141,16 +150,18 @@ int main()
         Vector2 sPoint;
         Vector2 ePoint;
 
+        Color lineColor = ColorAlpha(BLACK, 0.2);
+
         for (int col = 1; searcher->isColumn(col); col += 1)
         {
             searcher->getColumn(col, &sPoint, &ePoint);
-            DrawLine(sPoint.x, sPoint.y, ePoint.x, ePoint.y, ColorAlpha(BLACK, 0.2));
+            DrawLine(sPoint.x, sPoint.y, ePoint.x, ePoint.y, lineColor);
         }
 
         for (int row = 1; searcher->isRow(row); row += 1)
         {
             searcher->getRow(row, &sPoint, &ePoint);
-            DrawLine(sPoint.x, sPoint.y, ePoint.x, ePoint.y, ColorAlpha(BLACK, 0.2));
+            DrawLine(sPoint.x, sPoint.y, ePoint.x, ePoint.y, lineColor);
         }
 
 

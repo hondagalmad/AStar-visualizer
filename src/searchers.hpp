@@ -178,7 +178,7 @@ public:
         grid.startingPoint.x = startingPos.x;
         grid.startingPoint.y = startingPos.y;
 
-        grid.cellDimension = 20;
+        grid.cellDimension = 40;
 
         grid.dimensions = dimensions;
 
@@ -286,7 +286,7 @@ public:
 
     virtual void zoom(float n)
     {
-        grid.cellDimension = std::max(n + grid.cellDimension, 10.0f);
+        grid.cellDimension = std::max(n + grid.cellDimension, 20.0f);
 
         grid.cellsNumber.x = grid.dimensions.x / grid.cellDimension;
         grid.cellsNumber.y = grid.dimensions.y / grid.cellDimension;
