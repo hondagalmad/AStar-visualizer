@@ -35,15 +35,6 @@ int searcherType = DIJKSTRA;
 Searcher* searcher;
 Hashtable<Vector2I, CellType>::HashIterator iter;
 
-Button startBtn;
-Button sourceBtn;
-Button targetBtn;
-Button wallBtn;
-Button removeBtn;
-Button clearBtn;
-Button astarBtn;
-Button dijkstraBtn;
-
 Button controlButtons[CONTROL_BUTTONS_NUMBER];
 const char* controlButtonsText[] = {"CONTROLS: ", "START", "CLEAR", "SOURCE", "TARGET", "WALL", "REMOVE"};
 const Color controlButtonsColor[] = {WHITE, GREEN, LIGHTGRAY, ORANGE, DARKBLUE, BROWN, RED};
