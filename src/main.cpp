@@ -4,28 +4,53 @@
 
 #include "./searchers.hpp"
 #include "./controls.hpp"
+
 #define FRAMES 60.0f
-#define BUTTON_WIDTH 150
+#define BUTTON_WIDTH 200
 #define BUTTON_HEIGHT 60
+#define SCREEN_PARTS 7.0f
+#define MENU_GAP 10.0f
+#define CONTROL_BUTTONS_NUMBER 10
+#define ALGORITHM_BUTTONS_NUMBER 3
+
+#define CONTROLS_CONTROL 0
+#define START_CONTROL 1
+#define CLEAR_CONTROL 2
+#define SOURCE_CONTROL 3
+#define TARGET_CONTROL 4
+#define WALL_CONTROL 5
+#define REMOVE_CONTROL 6
 
 
-int screenWidth = 0;
-int screenHeight = 0;
+#define ALGORITHMS 0
+#define DIJKSTRA 1
+#define ASTAR 2
+
+
+float screenWidth = 0;
+float screenHeight = 0;
 
 
 int searcherType = DIJKSTRA;
 Searcher* searcher;
 Hashtable<Vector2I, CellType>::HashIterator iter;
 
+Button startBtn;
+Button sourceBtn;
+Button targetBtn;
+Button wallBtn;
+Button removeBtn;
+Button clearBtn;
+Button astarBtn;
+Button dijkstraBtn;
 
-Button startBtn({0, 0, BUTTON_WIDTH, BUTTON_HEIGHT}, "START", GREEN);
-Button sourceBtn({200, 0, BUTTON_WIDTH, BUTTON_HEIGHT}, "SOURCE", ORANGE);
-Button targetBtn({400, 0, BUTTON_WIDTH, BUTTON_HEIGHT}, "TARGET", DARKBLUE);
-Button wallBtn({600, 0, BUTTON_WIDTH, BUTTON_HEIGHT}, "WALL", BROWN);
-Button removeBtn({0, 100, BUTTON_WIDTH, BUTTON_HEIGHT}, "REMOVE", RED);
-Button clearBtn({200, 100, BUTTON_WIDTH, BUTTON_HEIGHT}, "CLEAR", GRAY);
-Button astarBtn({400, 100, BUTTON_WIDTH, BUTTON_HEIGHT}, "ASTAR", YELLOW);
-Button dijkstraBtn({600, 100, BUTTON_WIDTH, BUTTON_HEIGHT}, "DIJKSTRA", PURPLE);
+Button controlButtons[CONTROL_BUTTONS_NUMBER];
+const char* controlButtonsText[] = {"CONTROLS: ", "START", "CLEAR", "SOURCE", "TARGET", "WALL", "REMOVE"};
+const Color controlButtonsColor[] = {WHITE, GREEN, LIGHTGRAY, ORANGE, DARKBLUE, BROWN, RED};
+
+Button algorithmButtons[ALGORITHM_BUTTONS_NUMBER];
+const char* algorithmButtonsText[] = {"ALGORITHMS: ", "DIJKSTRA", "ASTAR"};
+const Color algorithmButtonsColor[] = {WHITE, PURPLE, YELLOW};
 
 void selectSearcherType(int type)
 {
@@ -48,38 +73,74 @@ void selectSearcherType(int type)
 
 void updateButtons(Vector2 mouse, bool isPressed)
 {
-    if (startBtn.updateState(mouse, isPressed))
+    // drawing titles
+    controlButtons[CONTROLS_CONTROL].updateState(mouse, false);
+    algorithmButtons[ALGORITHMS].updateState(mouse, false);
+
+    // drawing buttons
+    if (controlButtons[START_CONTROL].updateState(mouse, isPressed))
     {
         searcher->run();
     }
-    if (sourceBtn.updateState(mouse, isPressed))
-    {
-        searcher->select(SOURCE);
-    }
-    if (targetBtn.updateState(mouse, isPressed))
-    {
-        searcher->select(TARGET);
-    }
-    if (wallBtn.updateState(mouse, isPressed))
-    {
-        searcher->select(WALL);
-    }
-    if (removeBtn.updateState(mouse, isPressed))
-    {
-        searcher->select(REMOVE);
-    }
-    if (clearBtn.updateState(mouse, isPressed))
+    if (controlButtons[CLEAR_CONTROL].updateState(mouse, isPressed))
     {
         searcher->clear();
     }
-    if (astarBtn.updateState(mouse, isPressed))
+    if (controlButtons[SOURCE_CONTROL].updateState(mouse, isPressed))
     {
-        selectSearcherType(ASTAR);
+        searcher->select(SOURCE);
     }
-    if (dijkstraBtn.updateState(mouse, isPressed))
+    if (controlButtons[TARGET_CONTROL].updateState(mouse, isPressed))
+    {
+        searcher->select(TARGET);
+    }
+    if (controlButtons[WALL_CONTROL].updateState(mouse, isPressed))
+    {
+        searcher->select(WALL);
+    }
+    if (controlButtons[REMOVE_CONTROL].updateState(mouse, isPressed))
+    {
+        searcher->select(REMOVE);
+    }
+    if (algorithmButtons[DIJKSTRA].updateState(mouse, isPressed))
     {
         selectSearcherType(DIJKSTRA);
     }
+    if (algorithmButtons[ASTAR].updateState(mouse, isPressed))
+    {
+        selectSearcherType(ASTAR);
+    }
+}
+
+void initButtons()
+{
+    // control buttons initialization
+    for (int i = 0; i < CONTROL_BUTTONS_NUMBER; i += 1)
+    {
+        Rectangle rect = {
+            .x = i * (BUTTON_WIDTH + MENU_GAP) + MENU_GAP,
+            .y = MENU_GAP,
+            .width = BUTTON_WIDTH,
+            .height = BUTTON_HEIGHT
+        };
+        controlButtons[i].setColor(controlButtonsColor[i]);
+        controlButtons[i].setText(controlButtonsText[i]);
+        controlButtons[i].setRect(rect);
+    }
+
+    for (int i = 0; i < ALGORITHM_BUTTONS_NUMBER; i += 1)
+    {
+        Rectangle rect = {
+            .x = i * (BUTTON_WIDTH + MENU_GAP) + MENU_GAP,
+            .y = 2 * MENU_GAP + BUTTON_HEIGHT,
+            .width = BUTTON_WIDTH,
+            .height = BUTTON_HEIGHT
+        };
+        algorithmButtons[i].setColor(algorithmButtonsColor[i]);
+        algorithmButtons[i].setText(algorithmButtonsText[i]);
+        algorithmButtons[i].setRect(rect);
+    }
+
 }
 
 int main()
@@ -90,9 +151,11 @@ int main()
     screenWidth = GetScreenWidth();
     screenHeight = GetScreenHeight();
 
-    searcher = new Dijkstra(Vector2{.x = 0, .y = screenHeight / 5.0f},
-         Vector2{.x = (float)screenWidth, .y = 4.0f * screenHeight / 5.0f});
-    SetTargetFPS(120);
+    searcher = new Dijkstra(Vector2{.x = 0, .y = screenHeight / (SCREEN_PARTS)},
+         Vector2{.x = screenWidth, .y = (SCREEN_PARTS - 1) * screenHeight / (SCREEN_PARTS)});
+    SetTargetFPS(FRAMES);
+
+    initButtons();
 
     // initializing buttons
     while (!WindowShouldClose())
@@ -102,7 +165,14 @@ int main()
         ClearBackground(WHITE);
 
 
-        DrawRectangle(0, screenHeight / 5.0f, screenWidth, 4.0f * screenHeight / 5.0f, LIGHTGRAY);
+        DrawRectangle(0, screenHeight / SCREEN_PARTS, screenWidth, (SCREEN_PARTS - 1) * screenHeight / (SCREEN_PARTS), LIGHTGRAY);
+
+
+        // managing buttons
+        Vector2 mouse = GetMousePosition();
+        bool isPressed = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+        updateButtons(mouse, isPressed);
+
 
 
         // add particles if mouse is pressed
@@ -115,12 +185,6 @@ int main()
             Vector2 diff = GetMouseDelta();
             searcher->drag(diff.x, diff.y);
         }
-
-        // managing buttons
-        Vector2 mouse = GetMousePosition();
-        bool isPressed = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
-        updateButtons(mouse, isPressed);
-
         searcher->zoom((int)GetMouseWheelMove());
 
         // update the searcher and start the iterator

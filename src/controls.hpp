@@ -8,6 +8,8 @@
 #define HOVER 1
 #define PRESSED 2
 
+#define FONT_SIZE 30
+#define FONT_SPACING 1
 
 class Button
 {
@@ -16,9 +18,7 @@ private:
     const char* text; 
     Color color;
     int state;
-
-    const int fontSize = 20;
-    const int fontSpacing = 1;
+    int fontSize;
 
     bool isUnderMouse(Vector2 mouse)
     {
@@ -38,7 +38,7 @@ private:
     void drawButton()
     {
         DrawRectangleRec(rect, getColor());
-        Vector2 textSize = MeasureTextEx(GetFontDefault(), text, fontSize, fontSpacing);
+        Vector2 textSize = MeasureTextEx(GetFontDefault(), text, fontSize, FONT_SPACING);
         Vector2 textPos;
         textPos.x = rect.x + (rect.width - textSize.x) / 2;
         textPos.y = rect.y + (rect.height - textSize.y) / 2;
@@ -53,11 +53,16 @@ private:
 
 public:
 
-    Button(Rectangle rect, const char* text, Color color)
+    Button()
+    {
+        this->fontSize = FONT_SIZE;
+    }
+    Button(Rectangle rect, const char* text, Color color, int fontSize = FONT_SIZE)
     {
         this->rect = rect;
         this->text = text;
         this->color = color;
+        this->fontSize = fontSize;
         state = NORMAL;
     }
 
@@ -78,6 +83,10 @@ public:
     {
         rect = (Rectangle){.x = x, .y = y, .width = w, .height = h};
     }
+    void setRect(Rectangle rect)
+    {
+        this->rect = rect;
+    }
     void setText(const char* t)
     {
         text = t;
@@ -94,6 +103,11 @@ public:
     void getText(const char* t)
     {
         t = text;
+    }
+
+    void setFontSize(int fontSize)
+    {
+        this->fontSize = fontSize;
     }
 
 };

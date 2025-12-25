@@ -7,9 +7,6 @@
 #include "../data_structures/hashtable.hpp"
 #include "../data_structures/heap.hpp"
 
-#define DIJKSTRA 0
-#define ASTAR 1
-
 enum CellType
 {
     CHECKED = 0, WALL = 1, PATH = 2, SOURCE = 3, TARGET = 4, REMOVE, 
