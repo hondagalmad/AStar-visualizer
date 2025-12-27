@@ -5,12 +5,12 @@
 #include "./searchers.hpp"
 #include "./controls.hpp"
 
-#define FRAMES 60.0f
+#define FRAMES 120.0f
 #define BUTTON_WIDTH 200
 #define BUTTON_HEIGHT 60
-#define SCREEN_PARTS 7.0f
+#define SCREEN_PARTS 10.0f
 #define MENU_GAP 10.0f
-#define CONTROL_BUTTONS_NUMBER 10
+#define CONTROL_BUTTONS_NUMBER 7
 #define ALGORITHM_BUTTONS_NUMBER 3
 
 #define CONTROLS_CONTROL 0
@@ -185,7 +185,7 @@ int main()
         // draw the cells with the help of the iterator
         for (iter; iter.hasNext(); iter.next())
         {
-            if (searcher->isValid(iter.getKey()))
+            if (searcher->isValidRect(iter.getKey()))
             {
                 searcher->generateRect(iter.getKey(), &rect);
                 DrawRectangle(rect.x, rect.y, rect.width, rect.height, COLORS[iter.getValue()]);
@@ -195,7 +195,7 @@ int main()
         // draw the current cell with red
         if (!searcher->isPathFound() && searcher->isRunning())
         {
-            if (searcher->isValid(searcher->getCurrentPos()))
+            if (searcher->isValidRect(searcher->getCurrentPos()))
             {
                 searcher->generateRect(searcher->getCurrentPos(), &rect);
                 DrawRectangle(rect.x, rect.y, rect.width, rect.height, RED);

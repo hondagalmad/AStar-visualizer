@@ -7,6 +7,9 @@
 #include "../data_structures/hashtable.hpp"
 #include "../data_structures/heap.hpp"
 
+#define MIN_CELL_DIMENSION 20.0f
+#define ITERATIONS_PER_UPDATE 5
+
 enum CellType
 {
     CHECKED = 0, WALL = 1, PATH = 2, SOURCE = 3, TARGET = 4, REMOVE, 
@@ -90,8 +93,8 @@ protected:
 
     Vector2I currentPos;
 
-    int xDiff;
-    int yDiff;
+    float xDiff;
+    float yDiff;
     
     bool dragging;
 
@@ -123,8 +126,32 @@ protected:
         heap.add(vertex, distTo.get(vertex));
     }
 
+    virtual void applyDiffConstraints()
+    {
+        if (xDiff > 0) xDiff = 0;
+        else if (-xDiff * MIN_CELL_DIMENSION / grid.cellDimension + grid.cellsNumber.x * MIN_CELL_DIMENSION > grid.dimensions.x)
+        {
+            xDiff = -(grid.dimensions.x - grid.cellsNumber.x * MIN_CELL_DIMENSION) * grid.cellDimension / MIN_CELL_DIMENSION;
+        }
+        if (yDiff > 0) yDiff = 0;
+        else if (-yDiff * MIN_CELL_DIMENSION / grid.cellDimension + grid.cellsNumber.y * MIN_CELL_DIMENSION > grid.dimensions.y)
+        {
+            yDiff = -(grid.dimensions.y - grid.cellsNumber.y * MIN_CELL_DIMENSION) * grid.cellDimension / MIN_CELL_DIMENSION;
+        }
+    }
+
+    virtual bool isValidCell(Vector2I cell)
+    {
+        int maxX = grid.dimensions.x / MIN_CELL_DIMENSION;
+        int maxY = grid.dimensions.y / MIN_CELL_DIMENSION;
+
+        return cell.x >= 0 && cell.y >= 0 &&
+                cell.x <= maxX && cell.y <= maxY;
+    }
+
     virtual bool putToGrid(Vector2I key, CellType ct)
     {
+        if (!isValidCell(key)) return false;
 
         if (running)
         {
@@ -166,6 +193,7 @@ protected:
         grid.table.insert(key, ct);
         return true;
     }
+
     // ---------------------------------------------------------------------------------------------------------
     
 
@@ -175,7 +203,7 @@ public:
         grid.startingPoint.x = startingPos.x;
         grid.startingPoint.y = startingPos.y;
 
-        grid.cellDimension = 40;
+        grid.cellDimension = MIN_CELL_DIMENSION;
 
         grid.dimensions = dimensions;
 
@@ -189,14 +217,11 @@ public:
 
         pathFound = false;
 
-        // make the source and the target in the middle
-        // of the screen at opposite sides
-
         sourcePos = Vector2I{.x = -1000,.y = -1000};
         targetPos = Vector2I{.x = -1000,.y = -1000};
 
-        putToGrid((Vector2I){.x = 0, .y = (int)grid.cellsNumber.y / 2}, TARGET);
-        putToGrid((Vector2I){.x = (int)grid.cellsNumber.x - 1, .y = (int)grid.cellsNumber.y / 2}, SOURCE);
+        putToGrid((Vector2I){.x = (int)grid.cellsNumber.x / 3, .y = (int)grid.cellsNumber.y / 2}, TARGET);
+        putToGrid((Vector2I){.x = 2 * (int)grid.cellsNumber.x / 3, .y = (int)grid.cellsNumber.y / 2}, SOURCE);
 
         xDiff = 0;
         yDiff = 0;
@@ -281,24 +306,20 @@ public:
         putToGrid(pos, selectedType);
     }
 
-    virtual void startDragging(){dragging = true;}
-    virtual void stopDragging() {dragging = false;}
-
-    virtual bool isDragging() {return dragging;}
-
     virtual void drag(float x, float y)
     {
         xDiff += x;
         yDiff += y;
+        applyDiffConstraints();
     }
 
     virtual void zoom(float n)
     {
-        grid.cellDimension = std::max(n + grid.cellDimension, 20.0f);
+        grid.cellDimension = std::max(n + grid.cellDimension, MIN_CELL_DIMENSION);
 
         grid.cellsNumber.x = grid.dimensions.x / grid.cellDimension;
         grid.cellsNumber.y = grid.dimensions.y / grid.cellDimension;
-
+        applyDiffConstraints();
     }
 
     virtual Vector2I getCurrentPos()
@@ -311,7 +332,7 @@ public:
     virtual bool isPathFound() {return pathFound;}
 
     // returns true if a position is to be drawn to the screen
-    virtual bool isValid(Vector2I pos)
+    virtual bool isValidRect(Vector2I pos)
     {
 
         float xCellDiff = (float)xDiff / (float)grid.cellDimension;
@@ -364,7 +385,7 @@ public:
     virtual bool isColumn(int colNumber)
     {
 
-        int firstX = xDiff % grid.cellDimension + grid.startingPoint.x;
+        int firstX = (int)xDiff % grid.cellDimension + grid.startingPoint.x;
 
         int x = firstX + (colNumber - (firstX >= grid.startingPoint.x)) * grid.cellDimension;
 
@@ -376,7 +397,7 @@ public:
         sp->y = grid.startingPoint.y;
         ep->y = grid.startingPoint.y + grid.dimensions.y;
 
-        int firstX = xDiff % grid.cellDimension + grid.startingPoint.x;
+        int firstX = (int)xDiff % grid.cellDimension + grid.startingPoint.x;
 
         int x = firstX + (colNumber - (firstX >= grid.startingPoint.x)) * grid.cellDimension;
 
@@ -386,7 +407,7 @@ public:
 
     virtual bool isRow(int rowNumber)
     {
-        int firstY = yDiff % grid.cellDimension + grid.startingPoint.y;
+        int firstY = (int)yDiff % grid.cellDimension + grid.startingPoint.y;
         
         int y = firstY + (rowNumber - (firstY >= grid.startingPoint.y)) * grid.cellDimension;
 
@@ -399,7 +420,7 @@ public:
         sp->x = grid.startingPoint.x;
         ep->x = grid.startingPoint.x + grid.dimensions.x;
 
-        int firstY = yDiff % grid.cellDimension + grid.startingPoint.y;
+        int firstY = (int)yDiff % grid.cellDimension + grid.startingPoint.y;
 
         int y = firstY + (rowNumber - (firstY >= grid.startingPoint.y)) * grid.cellDimension;
 
@@ -409,48 +430,52 @@ public:
 
     virtual void update(Hashtable<Vector2I, CellType>::HashIterator& iter)
     {
-        if (running)
+        for (int i = 0; i < ITERATIONS_PER_UPDATE; i += 1)
         {
-            if (!pathFound)
+
+            if (running)
             {
-                
-                if (!heap.isEmpty())
+                if (!pathFound)
                 {
-                    currentPos = heap.removeSmallest();
-                }
-
-                for (int y = -1; y <= 1; y += 1)
-                {
-                    for (int x = -1; x <= 1; x += 1)
+                    
+                    if (!heap.isEmpty())
                     {
-            
-                        // diagonal is not allowed
-                        if (abs(x) != abs(y))
+                        currentPos = heap.removeSmallest();
+                    }
+    
+                    for (int y = -1; y <= 1; y += 1)
+                    {
+                        for (int x = -1; x <= 1; x += 1)
                         {
-                            Vector2I newPos = (Vector2I){currentPos.x + x, currentPos.y + y};
-        
-                            if (newPos == targetPos)
+                
+                            // diagonal is not allowed
+                            if (abs(x) != abs(y))
                             {
-                                pathFound = true;
-                                from.insert(targetPos, currentPos);
-                            }
+                                Vector2I newPos = (Vector2I){currentPos.x + x, currentPos.y + y};
             
-                            // only add the new cell if it's added to the grid successfully
-                            if (putToGrid(newPos, CHECKED))
-                            {
-                                addEdgeFrom(newPos, currentPos);
+                                if (newPos == targetPos)
+                                {
+                                    pathFound = true;
+                                    from.insert(targetPos, currentPos);
+                                }
+                
+                                // only add the new cell if it's added to the grid successfully
+                                if (putToGrid(newPos, CHECKED))
+                                {
+                                    addEdgeFrom(newPos, currentPos);
+                                }
                             }
+    
                         }
-
                     }
                 }
-            }
-            else
-            {
-                if (currentPos != sourcePos)
+                else
                 {
-                    putToGrid(currentPos, PATH);
-                    currentPos = from.get(currentPos);
+                    if (currentPos != sourcePos)
+                    {
+                        putToGrid(currentPos, PATH);
+                        currentPos = from.get(currentPos);
+                    }
                 }
             }
         }
